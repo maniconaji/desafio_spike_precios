@@ -1,6 +1,6 @@
 # Desafío Spike Abril 2021 - Predicción de precios de insumos básicos en Chile (Versión 2)
 
-Se añaden comentarios recibidos en archivos en archivo DesafíoSpikeManuelHuerta_v2.ipynb
+Se añaden comentarios recibidos en archivos en archivo [DesafíoSpikeManuelHuerta_v2.ipynb](https://github.com/maniconaji/desafio_spike_precios/blob/main/Desaf%C3%ADoSpikeManuelHuerta.ipynb)
 
 # Desafío Spike Abril 2021 - Predicción de precios de insumos básicos en Chile
 
