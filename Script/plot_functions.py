@@ -4,6 +4,7 @@ import seaborn as sns
 from matplotlib.gridspec import GridSpec
 import matplotlib.ticker as mticker
 import math
+import pandas as pd
 
 def round_up(n, decimals=0):
     multiplier = 10 ** decimals
@@ -24,7 +25,7 @@ def k_bins(s):
     else:
         return np.round(np.sqrt(s.count())).astype(int)
 
-def plot_distribution(df, col_name, vlabel, name_file):
+def plot_distribution(df, col_name, vlabel, name_file, close_file = True):
 
     s = df[col_name].dropna().sort_index()
     vmin  = round_down(s.min(), -1)
@@ -45,7 +46,6 @@ def plot_distribution(df, col_name, vlabel, name_file):
     ax_boxplot    = fig.add_subplot(gs[0, 0])
     ax_timeseries = fig.add_subplot(gs[1, :])
 
-    
     #boxplot
     sns.boxplot(
         data = s,  whis=[0, 100], orient="v", 
@@ -82,7 +82,6 @@ def plot_distribution(df, col_name, vlabel, name_file):
     ax_histogram.set_title("Histograma")#, fontweight='bold')
     # #time series
     ax_timeseries.plot(s, label="Datos", c='k', lw=1)
-    ax_timeseries.plot(s.resample("Q", convention="end").mean(), label="Promedio Trimestral", ls='-', lw=1, c='tab:red')
     ax_timeseries.set_xlim(s.index.min(), s.index.max())
     ax_timeseries.set_ylim(vmin, vmax)
     ax_timeseries.grid(axis="both", ls="--", lw=0.75, zorder=2)
@@ -91,7 +90,8 @@ def plot_distribution(df, col_name, vlabel, name_file):
     ax_timeseries.set_title("Serie de Tiempo")#, fontweight='bold')
     ax_timeseries.legend(loc=0, ncol=2)
     fig.savefig("Output/Plot/"+name_file)
-    plt.close(fig)
+    if close_file == True:
+        plt.close(fig)
     return
 
 def plot_allboxplot(df, vmin, vmax, vstep, vlabel, name_file):
@@ -144,9 +144,10 @@ def plotSTPrecipitación(df, region_name, fecha_min, fecha_max):
         boolean_list = [region_name in nregion for nregion in df.columns]
         if any(boolean_list) == True:
             #creación de figura
-            fig, ax = plt.subplots(
-                ncols=1, figsize=(12.5,5), gridspec_kw={'left'  :0.05, 'right' :0.975, 'top'   :0.900, 'bottom':0.125},
-                facecolor='lightgrey', edgecolor='w')
+            left, right, top, bottom = [0.075, 0.975, 0.9, 0.125]
+            gridspec_kw = {'left' : left, 'right' : right, 'top' : top, 'bottom' : bottom, "wspace":0.05, "width_ratios":[5, 1]}
+            fig, (ax, ay) = plt.subplots(
+                ncols=2, figsize=(12.5,5), gridspec_kw=gridspec_kw, facecolor='lightgrey', edgecolor='w')
             fig.suptitle("Series históricas de precipitaciones".upper(), fontweight="bold")
             col_name = df.columns[np.where(boolean_list)[0]][0]
             vmin, vmax, df = values(df, col_name, fecha_min, fecha_max)
@@ -154,15 +155,18 @@ def plotSTPrecipitación(df, region_name, fecha_min, fecha_max):
             sns.lineplot(data=df, x="date", y=col_name, label="Datos", ax=ax)
             titulo_rangotemporal = "Rango: ".upper()+fecha_min.replace("-","/")+' a '+fecha_max.replace("-","/")
             titulo_region        = 'Región: '.upper()+col_name.replace("_"," ")
-            #Extras
             ax.set_axisbelow(True)
-            ax.set(
-                xlim = (df['date'].min(), df['date'].max()), xlabel = "Tiempo [años]",
-                ylim = (vmin, vmax), ylabel = "Precipitación (mm)",
-                title= titulo_rangotemporal+" - "+titulo_region, 
-                )
+            ax.set(xlim = (df['date'].min(), df['date'].max()), ylim = (vmin, vmax), title= titulo_rangotemporal+" - "+titulo_region)
+            ax.set_xlabel("Tiempo [años]", fontweight='bold', fontsize=12, labelpad=5)
+            ax.set_ylabel("Precipitación (mm)", fontweight='bold', fontsize=12, labelpad=5)
             ax.legend(fontsize=12, facecolor='lightgrey', edgecolor='k')
             ax.grid(ls="--", lw=1.5, zorder = 2)
+            #table
+            index = ["n° datos", "promedio", "std", "min", "P25", "P50", "P75", "max"]
+            table_data = [ [index, "{:.2f}".format(value)] for index, value in zip(index, df[col_name].describe().values)]
+            table = ay.table(cellText=table_data, loc='center left', cellLoc="center")
+            table.scale(1,1.5)
+            ay.axis('off')
             #guardar imagen 
             fig.savefig('Output/Plot/Precipitaciones_ST-'+col_name+'.png', facecolor='lightgrey', edgecolor='w')
         else:
@@ -182,8 +186,7 @@ def plotSTbyYearPrecipitación(df, region_name, list_years):
     
     #eliminar NaN values y ordenar el índice
     df    = df.dropna().sort_index()
-    Meses = {n+1: mes for n, mes in enumerate(["Enero",'Febrero', "Marzo", "Abril", "Mayo", "Junio", 
-                                               "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"])}
+    Meses = {n+1: mes for n, mes in enumerate(["Ene",'Feb', "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"])}
     boolean_year_list = []
     for year in list_years:
         condicion = any(df.index.year.isin([year]))
@@ -195,34 +198,40 @@ def plotSTbyYearPrecipitación(df, region_name, list_years):
 
         boolean_list = [region_name in nregion for nregion in df.columns]
         if any(boolean_list) == True:
-            fig, ax = plt.subplots(ncols=1, figsize=(15,5), gridspec_kw={'left'  :0.05, 'right' :0.975, 'top'   :0.900, 'bottom':0.15},
+            fig, ax = plt.subplots(ncols=1, figsize=(10,5), gridspec_kw={'left'  :0.05, 'right' :0.975, 'top'   :0.900, 'bottom':0.15},
                                 facecolor='lightgrey', edgecolor='w')
             col_name = df.columns[np.where(boolean_list)[0]][0]
             df['Años']         = df.index.year
             df['Meses']        = df.index.month
             df["Nombre_meses"] = df.Meses.map(Meses)
-            df          = df.loc[df['Años'].isin([1982, 1992, 2002, 2012, 2019])]
+            df          = df.loc[df['Años'].isin(list_years)]
             #serie de tiempo
-            sns.lineplot(data=df, x="Meses", y=col_name, hue="Años", ci=None, style="Años", ax=ax, palette="tab10")
+            sns.lineplot(data=df, x="Meses", y=col_name, ci=None, hue="Años", ax=ax, lw=2, palette="tab10")
             
             #definición de limites
+            if df[col_name].max() < 10:
+                vmax  = round_up(df[col_name].max(), -1)
+            elif df[col_name].max() > 200:
+                vmax  = round_up(df[col_name].max(), -2)
+            else:
+                vmax  = round_up(df[col_name].max()*1.1, -1)
             ax.set_xlim(1, 12)
-            ax.set_ylim(0,)
+            ax.set_ylim(0,vmax)
             #definición de etiquetas del eje x e y
-            ax.set_ylabel("Precipitación (mm)", fontweight='bold', fontsize=14, labelpad=10)
-            ax.set_xlabel("Tiempo [meses]", fontweight='bold', fontsize=14, labelpad=10)
+            ax.set_ylabel("Precipitación (mm)", fontweight='bold', fontsize=12, labelpad=10)
+            ax.set_xlabel("Tiempo [meses]", fontweight='bold', fontsize=12, labelpad=10)
             #aumento de tamaño en xticks e yticks
             ax.set_xticks(df.Meses.unique().tolist())
             ax.set_xticklabels(df.Nombre_meses.unique().tolist())
-            ax.tick_params(labelsize = 12, pad=5)
+            ax.tick_params(labelsize = 10, pad=5)
             #incorpora la legenda
-            ax.legend(fontsize=12, facecolor='lightgrey', edgecolor='k')
+            ax.legend(fontsize=10, facecolor='lightgrey', edgecolor='k')
             #difine forma de lineas que representan a la grilla
             ax.grid(ls="--", lw=1, zorder = 1)
             #definición de titulo
-            ax.set_title("Series históricas de precipitaciones para la región: "+col_name, fontsize=16, fontweight='bold', pad = 10)
+            ax.set_title("Series históricas de precipitaciones para la región: "+col_name, fontsize=14, fontweight='bold', pad = 10)
             #guardar imagen 
-            fig.savefig('Output/Plot/Precipitaciones_byYear_'+col_name+'.png', dpi=300, facecolor='lightgrey', edgecolor='w')
+            fig.savefig('Output/Plot/Precipitaciones_byYear_'+col_name+'.png', facecolor='lightgrey', edgecolor='w')
         else:
             print("No se encuentra la región: "+region_name+" dentro del archivo.")
             
@@ -241,26 +250,34 @@ def plotSTBancoCentral(df, col_name, fecha_min, fecha_max):
     if (any(df.index == fecha_min) == True) & (any(df.index == fecha_max) == True):
         condicion = (df.index >= fecha_min) & (df.index <= fecha_max)
         s = df[condicion].sort_index()
-        
 
         boolean_list = [col_name in ncol for ncol in df.columns]
         if any(boolean_list) == True:
-            fig, ax = plt.subplots(
-                ncols=1, figsize=(12.5,5), gridspec_kw={'left'  :0.05, 'right' :0.975, 'top'   :0.900, 'bottom':0.125},
+            gridspec_kw={'left'  :0.05, 'right' :0.975, 'top'   :0.900, 'bottom':0.125, "wspace":0.05, "width_ratios":[5, 1]}
+            fig, (ax, ay) = plt.subplots(
+                ncols=2, figsize=(12.5,5), gridspec_kw=gridspec_kw,
                 facecolor='lightgrey', edgecolor='w')
             nombre_columna = df.columns[np.where(boolean_list)[0]][0]
             #serie de tiempo            
-            ax.plot(s[nombre_columna].dropna(), zorder=2, lw=1, label="Datos", marker='o', ms=2.5, ls="--")
+            ax.plot(s[nombre_columna].dropna(), zorder=2, lw=2, label="Datos", ls="-")
             
-            #definición de limites
+            #definición de limite
+            vmin  = round_down(s[nombre_columna].dropna().min(), -1)
+            if s[nombre_columna].dropna().max() < 10:
+                vmax  = round_up(s[nombre_columna].dropna().max(), -1)
+            elif s[nombre_columna].dropna().max() > 200:
+                vmax  = round_up(s[nombre_columna].dropna().max(), -2)
+            else:
+                vmax  = round_up(s[nombre_columna].dropna().max()*1.1, -1)
             ax.set_xlim(s[nombre_columna].dropna().index.min(), s[nombre_columna].dropna().index.max())
+            ax.set_ylim(vmin, vmax)
             
             #definición de etiquetas del eje x e y
-            ax.set_ylabel(col_name, fontweight='bold', fontsize=14)
-            ax.set_xlabel("Tiempo", fontweight='bold', fontsize=14)
+            ax.set_ylabel(col_name, fontweight='bold', fontsize=12, labelpad=10)
+            ax.set_xlabel("Tiempo", fontweight='bold', fontsize=12, labelpad=10)
             
             #aumento de tamaño en xticks e yticks
-            ax.tick_params(labelsize = 12, pad=5)
+            ax.tick_params(labelsize = 10, pad=5)
             
             #incorpora la legenda
             ax.legend(fontsize=14, facecolor='lightgrey', edgecolor='k')
@@ -269,18 +286,54 @@ def plotSTBancoCentral(df, col_name, fecha_min, fecha_max):
             ax.grid(ls="--", lw=1, zorder = 1)
             
             #definición de titulo
-            ax.set_title('Series históricas de la variable: '+nombre_columna+' para el rango: '+fecha_min+' a '+fecha_max+'.', 
-                         fontsize=16, fontweight='bold', pad = 10)
+            ax.set_title('Series históricas para el rango: '+fecha_min+' a '+fecha_max+'.', 
+                         fontsize=14, fontweight='bold', pad = 10)
             
+            #table
+            index = ["n° datos", "promedio", "std", "min", "P25", "P50", "P75", "max"]
+            table_data = [ [index, "{:.2f}".format(value)] for index, value in zip(index, s[nombre_columna].dropna().describe().values)]
+            table = ay.table(cellText=table_data, loc='center left', cellLoc="center")
+            table.scale(1,1.5)
+            ay.axis('off')
+
             #guardar imagen 
-            fig.savefig('Output/Plot/BancoCentral_ST-'+nombre_columna+'.png', dpi=300, facecolor='lightgrey', edgecolor='w')
+            fig.savefig('Output/Plot/BancoCentral_ST-'+nombre_columna+'.png', facecolor='lightgrey', edgecolor='w')
         else:
             print("Error: No se encuentra la región: "+col_name+" dentro del archivo.")
     else:
         print("Error: El rango de fechas entre "+fecha_min+' a '+fecha_max+' no se encuentra en el archivo.')
     return
 
-
+def plot_variablesrelevantes(df_relevante, ncols, nrows):
+    fig, axes = plt.subplots(
+        figsize = (5*ncols, 5*nrows),
+        ncols= ncols, nrows = nrows, 
+        gridspec_kw={'wspace':0.25, 'hspace':0.25, 'left'  :0.075, 'right' :0.95,'top' :0.950, 'bottom':0.1},
+        facecolor='lightgrey', edgecolor='w'
+        )
+    i=0
+    for n, ax in enumerate(axes.flatten()):
+        col_name = df_relevante.columns[1:][i]
+        if n%2 == 0:
+            s = df_relevante[col_name].dropna().sort_index()
+            hist, bins = np.histogram(s, bins = k_bins(s))
+            hist = hist / s.count()
+            width = 1 * (bins[1] - bins[0])
+            bins = (bins[:-1] + bins[1:]) / 2
+            ax.bar(bins, hist, width, color='tab:blue', edgecolor='k', zorder=2)
+            ax.set_ylim(0,0.3)
+            ax.set_xlabel(col_name)
+            ax.set_ylabel("Probabilidad (-)")
+            ax.grid()
+            ax.set_axisbelow(True)
+        elif n%2 == 1:
+            pd.plotting.autocorrelation_plot(s, ax=ax, label=col_name)
+            ax.set_ylim(-1, 1)
+            ax.set_xlim(0,)
+            ax.set_title("Autocorrelación: {:.3f}".format(s.autocorr()))
+            ax.set_axisbelow(True)
+            i+=1
+    return
 
 ########################################### Otras ################################################################
 
