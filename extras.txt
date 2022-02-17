@@ -1,0 +1,88 @@
+# func1
+        plot_distribution(df, col_name, "IMACEC (%)", "BancoCentral_distribuciones_"+col_name)
+fig, ax = plt.subplots(figsize=(8, 8))
+sns.boxplot(data=df[columnas_objetivo], orient="h", ax=ax, whis=[0,100])
+fig.savefig("Output/Plot/BancoCentral_boxplot_MACEC")
+
+# func2
+for col_name in columnas_objetivo:
+    plot_distribution(df, col_name, "PIB (MM$)", "BancoCentral_distribuciones_"+col_name)
+plot_distribution(df, col_name, "IVA (MM$)", "BancoCentral_distribuciones_"+col_name)
+plot_distribution(df, col_name, col_name, "BancoCentral_distribuciones_"+col_name)
+    columnas_objetivo.append(df.columns[36])
+    columnas_objetivo.append(df.columns[37])
+    fig, (ax, ay) = plt.subplots(ncols=2, figsize=(16, 8))
+    sns.boxplot(data=df[[i for i in columnas_objetivo if (i not in ["PIB_a_costo_de_factores", "PIB"])]], orient="h", ax=ax, whis=[0,100])
+    sns.boxplot(data=df[["PIB_a_costo_de_factores", "PIB"]], orient="v", ax=ay, whis=[0,100])
+    fig.savefig("Output/Plot/BancoCentral_boxplot_PIB")
+
+# func3
+
+plot_distribution(df, col_name, "Precio ($/dolares)", "BancoCentral_distribuciones_"+col_name)
+vlabel = {
+    0: "Precio (dolares/m3)",
+    1: "Precio (dolares/oz)",
+    2: "Precio (dolares/oz)",
+    3: "Precio (dolares/libra)",
+    4: "Precio (dolares/galon)",
+    5: "Precio (dolares/Munidades termicas)",
+    6: "Precio (dolares/barril)",
+    7: "Precio (dolares/m3)",
+    8: "Precio (dolares/barril)",
+    9: "Precio (dolares/galon)"
+    }
+for n, col_name in enumerate(columnas_objetivo):
+    plot_distribution(df, col_name, vlabel[n], "BancoCentral_distribuciones_"+col_name)
+    columnas_objetivo.append("Tipo_de_cambio_del_dolar_observado_diario")
+    fig, ax = plt.subplots(figsize=(8, 8))
+    sns.boxplot(data=df[columnas_objetivo],  orient="h", ax=ax, whis=[0,100])
+    fig.savefig("Output/Plot/BancoCentral_boxplot_Precios")
+
+# func4
+
+    #Resumen descriptivo
+    for col_name in columnas_objetivo:
+        plot_distribution(df, col_name, "Ocupados (miles de personas)", "BancoCentral_distribuciones_"+col_name)
+
+    fig, (ax, ay) = plt.subplots(ncols=2, figsize=(16, 8))
+    sns.boxplot(data=df[columnas_objetivo[1:]], orient="h", ax=ax, whis=[0,100])
+    sns.boxplot(data=df[columnas_objetivo[0]], orient="v", ax=ay, whis=[0,100])
+    ay.set_xticklabels("")
+    ay.set_xlabel(columnas_objetivo[0])
+    fig.savefig("Output/Plot/BancoCentral_boxplot_Ocupación")
+
+# func5
+plot_distribution(df, col_name, "TCM (-)", "BancoCentral_distribuciones_"+col_name)
+        plot_distribution(df, col_name, "TCR (-)", "BancoCentral_distribuciones_"+col_name)
+    #Resumen descriptivo
+
+    fig, ax = plt.subplots(figsize=(8, 8))
+    sns.boxplot(data=df[columnas_objetivo], orient="h", ax=ax, whis=[0,100])
+    fig.savefig("Output/Plot/BancoCentral_boxplot_TCMTCR")
+
+# func6
+        plot_distribution(df, col_name, "Generación eléctrica (GWh)", "BancoCentral_distribuciones_"+col_name)
+    #Resumen descriptivo
+
+    for col_name in columnas_objetivo:
+        plot_distribution(df, col_name, "Índice de producción (%)", "BancoCentral_distribuciones_"+col_name)
+
+    fig, (ax, ay) = plt.subplots(ncols=2, figsize=(16, 8))
+    sns.boxplot(data=df[columnas_objetivo], orient="h", ax=ax, whis=[0,100])
+    sns.boxplot(data=df[df.columns[79]], orient="v", ax=ay, whis=[0,100])
+    ay.set_xticklabels("")
+    ay.set_xlabel(col_name)
+    fig.savefig("Output/Plot/BancoCentral_boxplot_Produccion")
+
+# func7
+        plot_distribution(df, col_name, "Ventas de autos nuevos (unidades)", "BancoCentral_distribuciones_"+col_name)
+
+    for col_name in columnas_objetivo:
+        plot_distribution(df, col_name, "Índice_de_ventas (%)", "BancoCentral_distribuciones_"+col_name)
+
+    fig, (ax, ay) = plt.subplots(ncols=2, figsize=(16, 8))
+    sns.boxplot(data=df[columnas_objetivo], orient="h", ax=ax, whis=[0,100])
+    sns.boxplot(data=df[df.columns[-1]], orient="v", ax=ay, whis=[0,100])
+    ay.set_xticklabels("")
+    ay.set_xlabel(col_name)
+    fig.savefig("Output/Plot/BancoCentral_boxplot_Ventas")

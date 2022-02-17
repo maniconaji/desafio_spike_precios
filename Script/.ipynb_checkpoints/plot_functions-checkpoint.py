@@ -14,7 +14,16 @@ def round_down(n, decimals=0):
     multiplier = 10 ** decimals
     return math.floor(n * multiplier) / multiplier
 
-
+def k_bins(s):
+    """
+    Función para determinar número de bins en un histograma
+    
+    s (series.dataframe): Serie de la que se desea enconrar en número de bins para realizar un histograma.
+    """
+    if s.count() >= 100:
+        return np.round(1+ 3.322*np.log10(s.count())).astype(int)
+    else:
+        return np.round(np.sqrt(s.count())).astype(int)
 
 def plot_distribution(df, col_name, vlabel, name_file, close_file = True):
 
